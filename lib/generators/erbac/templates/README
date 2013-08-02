@@ -1,0 +1,13 @@
+===============================================================================
+
+An initializer file has been created here: config/initializers/erbac.rb, you 
+can change erbac settings to match your needs. 
+Defaults values are commented out.
+
+A Role class has been created in app/models (with the name you gave as 
+argument otherwise the default is auth_item.rb), you can add your own business logic 
+inside.
+
+Inside your User class (or the name you gave as argument otherwise the default 
+is user.rb), erbac method has been inserted to provide erbac methods.
+

@@ -1,0 +1,16 @@
+#remove hidden folders
+.komodotools/
+
+#remove project files
+*.komodoproject
+*.komodotools/
+*.sublime-project
+*.sublime-workspace
+
+#remove gemfile
+*.gem
+pkg/*.gem
+
+#remove bat and sh files
+*.bat
+*.sh
