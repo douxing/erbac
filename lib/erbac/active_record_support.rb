@@ -11,24 +11,19 @@ module Erbac
 		      class_name: Erbac.auth_assignment_class,
 		      foreign_key: "user_id"
 
-		    accepts_nested_attributes_for Erbac.auth_assignment.pluralize.to_sym, allow_destroy: true
-		    attr_accessible (Erbac.auth_assignment.pluralize + "_attributes").to_sym
-
 		  	has_many Erbac.auth_item.pluralize.to_sym, 
 		      through: Erbac.auth_assignment.pluralize.to_sym,
 		      source: Erbac.auth_item.pluralize.to_sym
 
-		    def check_access?(*args)
+		    define_method :check_access? do |*args|
 		      unless (args.first.is_a? Erbac.auth_item_class.constantize)
 		        raise TypeError, "Should pass in #{Erbac.auth_item_class} instance as the first parameter. Got #{args.first.to_s}", caller
 		      end
 
-		      options = args.extract_options!
-		      check_access_recursive? args.first, options
+		      check_access_recursive? args.first, args.extract_options!
 		    end
 
-
-		    def execute_biz_rule?(*args)
+		    define_method :execute_biz_rule? do |*args|
 		      item = args.first
 		      params = args.extract_options!
 		      if (item.is_a? Erbac.auth_item_class.constantize or item.is_a? Erbac.auth_assignment_class.constantize)
@@ -38,11 +33,9 @@ module Erbac
 		      end
 		    end
 
-		    protected
-
-		    def check_access_recursive?(item, params={})
+		    define_method :check_access_recursive? do |item, params={}|
 		      if bizrule_sandbox(item.bizrule, params, item.data)
-		        return true if Erbac.default_roles.inlcude? item.name
+		        return true if Erbac.default_roles.include? item.name
 		        assignment = Erbac.auth_assignment_class.constantize.where(user_id: self, item_id: item).first
 		        if assignment
 		          return true if bizrule_sandbox(item.bizrule, params, item.data)
@@ -54,17 +47,37 @@ module Erbac
 		      false
 		    end
 
-		    def bizrule_sandbox(bizrule, params={}, data=nil)
+		    define_method :bizrule_sandbox do |bizrule, params={}, data=nil|
 		      if (bizrule.nil? or bizrule.empty?)
 		        true
 		      else
 		        proc do
-		          $SAFE = 4 # here is a military area
-		          Erbac.restrict_check_mode ? (eval bizrule) == true : (eval bizrule) != false
+		        	# $SAFE = 3 how to change this ?
+		          Erbac.strict_check_mode ? (self.instance_eval bizrule) == true : (self.instance_eval bizrule) != false
 		        end.call
 		      end
 		    end
-		      
+
+		    send :protected, :check_access_recursive?, :bizrule_sandbox
+		    
+		    # add an anonymous singleton instance
+		    @anonymous = self.new
+		    class << self
+		    	define_method :anonymous do
+		    		@anonymous
+		    	end
+		    end
+
+		    define_method :anonymous_should_not_be_saved do
+		    	raise NoMethodError, "Anonymous object should not be saved!", caller if self.equal? self.class.anonymous
+		    end
+
+		    before_save :anonymous_should_not_be_saved
+
+		    define_method :anonymous? do
+		    	self.equal? @anonymous
+		    end
+
 		  end
 
 		  def control_auth_item
@@ -75,9 +88,6 @@ module Erbac
 		      dependent: :delete_all,
 		      class_name: Erbac.auth_assignment_class,
 		      foreign_key: "item_id"
-
-		    accepts_nested_attributes_for Erbac.auth_assignment.pluralize.to_sym, allow_destroy: true
-		    attr_accessible (Erbac.auth_assignment.pluralize + "_attributes").to_sym
 
 		    has_many Erbac.user_class.underscore.pluralize.to_sym, 
 		      through: Erbac.auth_assignment.pluralize.to_sym,
@@ -98,59 +108,57 @@ module Erbac
 		    const_set("TYPE_ROLE", 2)
 
 		    
-
-		    def add_child item
-		      if self.name == child.name
+		    define_method :add_child do |item|
+		      if self.name == item.name
 		        raise AuthItemRelationError, "Cannot add #{self.name} as a child of itself.", caller
 		      end
 
-		      check_item_child_type(self, child)
+		      check_item_child_type(item)
 
-		      if detect_loop(child)
+		      if detect_loop?(item)
 		        raise AuthItemRelationError, "Cannot add #{child.name} as a child of #{self.name}. A loop has been detected.", caller 
 		      end
 
-		      self.children << child
+		      self.children << item
 		    end
 
-		    def remove_child item
+		    define_method :remove_child do |item|
 		      self.children.delete item
 		    end
 
-		    def has_child? item
+		    define_method :has_child? do |item|
 		      self.children.include? child
 		    end
 
-		    def assign(user, bizrule=nil, data=nil)
+		    define_method :assign do |user, bizrule=nil, data=nil|
 		      assignment = Erbac.auth_assignment_class.constantize.where({item_id: self, user_id: user}).first_or_create
-		      assignemnt.bizrule = bizrule
-		      assignemnt.data = data
-		      assignemnt
+		      assignment.bizrule = bizrule
+		      assignment.data = data
+		      assignment
 		    end
 
-		    def revoke(user)
+		    define_method :revoke do |user|
 		      Erbac.auth_assignment_class.constantize.delete({item_id: self, user_id: user})
 		    end
 
-		    def is_assigned?(user)
+		    define_method :is_assigned? do |user|
 		      Erbac.auth_assignment_class.constantize.where({item_id: self, user_id: user}).any?
 		    end
 
-		    def get_auth_assignment(user)
+		    define_method :get_auth_assignment? do |user|
 		      Erbac.auth_assignment_class.constantize.where({item_id: self, user_id: user}).first
 		    end
 
-		    protected
-
-		    def detect_loop(child)
+		    define_method :detect_loop? do |child|
 		      return true if (self.name == child.name)
 		      child.children.each do |g|
-		        return true if self.detect_loop(g)
+		        return true if self.detect_loop?(g)
 		      end
 		      false
 		    end
 
-		    def check_item_child_type(child)
+
+		    define_method :check_item_child_type do |child|
 		      unless (self.is_a? Erbac.auth_item_class.constantize)
 		        raise TypeError, "Should pass in #{Erbac.auth_item_class} instance as the first parameter. Got #{self.to_s}", caller
 		      end
@@ -182,6 +190,9 @@ module Erbac
 		      end
 		    end
 		    after_find :marshal_after_find
+
+		    send :protected, :detect_loop?, :check_item_child_type
+		    send :private, :marshal_around_save, :marshal_after_find
 
 		  end
 
@@ -216,6 +227,8 @@ module Erbac
 		      end
 		    end
 		    after_find :marshal_after_find
+
+		    send :private, :marshal_around_save, :marshal_after_find
 		  end
   	end
 	end

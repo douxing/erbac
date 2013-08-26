@@ -8,21 +8,17 @@ module Erbac
   		AUTH_TYPES = ["operation", "task", "role"]
 
   		AUTH_TYPES.each do |type|
-  			define_method ("create_" + type) do |name, *args|
-  				options = args.extract_options!
+  			define_method ("create_" + type) do |name, options={}|
 	  			options[:name] = name
 	  			options[:auth_type] = Erbac.auth_item_class.constantize.const_get("TYPE_" + type.upcase)
-	  			Erbac.auth_item_class.constantize.create options
+	  			item = Erbac.auth_item_class.constantize.new options
+          item.save!
+          item
   			end
 
   			define_method ("get_" + type.pluralize) do |user|
   				user.send Erbac.auth_item.pluralize.to_sym
   			end
-  		end
-
-  		def check_access(*args)
-        # user.check_access auth_item, options
-  			args[1].check_access args.first, args.extract_options!
   		end
 
   		def add_item_child(parent, child)
@@ -80,24 +76,10 @@ module Erbac
           raise TypeError, "Should pass in #{Erbac.auth_item_class} instance as the first parameter. Got #{args.first.to_s}", caller
         end
 
-        if (args[1].is_a? Erbac.user_class.constantize)
-          args[1].check_access? args.first, args.extract_options!
-        else
-          bizrule_sandbox args.first.bizrule, args.extract_options!, args.first.data
-        end
+        user = (args[1].is_a? Erbac.user_class.constantize) ? args[1] : Erbac.user_class.constantize.anonymous
+        user.check_access? args.first, args.extract_options!
       end
 
-  		protected
-  		def bizrule_sandbox(bizrule, params={}, data=nil)
-  			if (bizrule.nil? or bizrule.empty?)
-  				true
-  			else
-  				proc do
-  					$SAFE = 4 # here is a military area
-						Erbac.restrict_check_mode ? (eval bizrule) == true : (eval bizrule) != false
-					end.call
-  			end
-  		end
   	end
   end
 end
