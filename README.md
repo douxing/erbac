@@ -88,9 +88,10 @@ the model we use is defined here:
 		task_update_own_post = Erbac.create_task "updateOwnPost", description: "update a post by author himself", bizrule: "self == params[:post].author"
 		task_update_own_post.add_child oper_update_post
 
-		role_editor = Erbac.create_role "editor"
-		role_editor.add_child role_reader
-		role_editor.add_child oper_update_post
+		role_author = Erbac.create_role "author"
+		role_author.add_child role_reader
+		role_author.add_child oper_create_post
+		role_author.add_child task_update_own_post
 
 		Erbac.assign role_author, authorA
 		Erbac.assign role_author, authorB
