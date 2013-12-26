@@ -10,7 +10,3 @@
 #remove gemfile
 *.gem
 pkg/*.gem
-
-#remove bat and sh files
-*.bat
-*.sh
