@@ -127,7 +127,7 @@ module Erbac
 		    end
 
 		    define_method :has_child? do |item|
-		      self.children.include? child
+		      self.children.include? item
 		    end
 
 		    define_method :assign do |user, bizrule=nil, data=nil|
