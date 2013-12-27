@@ -138,7 +138,7 @@ module Erbac
 		    end
 
 		    define_method :revoke do |user|
-		      Erbac.auth_assignment_class.constantize.delete({item_id: self, user_id: user})
+		      Erbac.auth_assignment_class.constantize.delete_all({item_id: self, user_id: user})
 		    end
 
 		    define_method :is_assigned? do |user|
