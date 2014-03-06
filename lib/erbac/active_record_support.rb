@@ -38,7 +38,7 @@ module Erbac
 		        return true if Erbac.default_roles.include? item.name
 		        assignment = Erbac.auth_assignment_class.constantize.where(user_id: self, item_id: item).first
 		        if assignment
-		          return true if bizrule_sandbox(item.bizrule, params, item.data)
+		          return true if bizrule_sandbox(assignment.bizrule, params, assignment.data)
 		        end
 		        item.parents.each do |p|
 		          return true if check_access_recursive?(p, params)
