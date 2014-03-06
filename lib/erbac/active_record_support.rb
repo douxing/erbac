@@ -134,6 +134,7 @@ module Erbac
 		      assignment = Erbac.auth_assignment_class.constantize.where({item_id: self, user_id: user}).first_or_create
 		      assignment.bizrule = bizrule
 		      assignment.data = data
+		      assignment.save
 		      assignment
 		    end
 
