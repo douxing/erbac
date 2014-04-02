@@ -177,7 +177,7 @@ module Erbac
 		    # make it transparent with the user
 		    define_method :marshal_around_save do |*args, &block|
 		      data = self.data
-		      self.data = Marshal.dump data
+		      self.data = Marshal.dump(data).force_encoding("UTF-8")
 		      block.call # it is a trick, search it!
 		      self.data = data
 		    end
@@ -214,7 +214,7 @@ module Erbac
 		    # make it transparent with the user
 		    define_method :marshal_around_save do |*args, &block|
 		      data = self.data
-		      self.data = Marshal.dump data
+		      self.data = Marshal.dump(data).force_encoding("UTF-8")
 		      block.call # it is a trick, search it!
 		      self.data = data
 		    end
